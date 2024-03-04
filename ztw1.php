@@ -1,17 +1,26 @@
 <?php
 /**
  * @package ztw1
- * @version 0.2
+ * @version 1
  */
 /*
 Plugin Name: ztw1
 Plugin URI: http://wordpress.org/plugins/ztw1/
 Description: This plugins adds ad between title and post
 Author: Jakub Cebula, Jakub Kozanecki
-Version: 0.2
+Version: 1
 Author URI: localhost
 */
 
+function ztw1_register_styles()
+{
+    //register style
+    wp_register_style('ztw1_styles', plugins_url('/css/style.css', __FILE__));
+    //enable style (load in meta of html)
+    wp_enqueue_style('ztw1_styles');
+}
+
+add_action('init', 'ztw1_register_styles');
 
 function ztw1_admin_actions_register_menu()
 {
@@ -46,7 +55,7 @@ function get_advertisements() {
 
     $table_name = $wpdb->prefix . 'advertise_ads';
 
-    return $wpdb->get_results("SELECT * FROM $table_name");
+    return $wpdb->get_results("SELECT * FROM $table_name", ARRAY_A);
 }
 
 function add_advertisement($ad) {
@@ -54,7 +63,7 @@ function add_advertisement($ad) {
 
     $table_name = $wpdb->prefix . 'advertise_ads';
 
-    return $wpdb->insert($table_name, $ad, '%s');
+    $wpdb->insert($table_name, array('content' => $ad), array('%s'));
 }
 
 
@@ -64,11 +73,11 @@ function ztw1_admin_page(){
     // process changes from form
     if (isset($_POST['ztw1_do_change'])) {
         if ($_POST['ztw1_do_change'] == 'Y') {
-            $newAd = $_POST['ztw1_new_ad'];
+            $new_ad = $_POST['ztw1_new_ad'];
             echo '<div class="notice notice-success isdismissible">
 <p>Advertisement saved.</p></div>';
-            //update_option('ztw1_new_ad', $newAd);
-            add_advertisement($newAd);
+            //update_option('ztw1_new_ad', $new_ad);
+            add_advertisement($new_ad);
             update_option('ztw1_ads', get_advertisements());
         }
     }
@@ -80,9 +89,7 @@ function ztw1_admin_page(){
         <form name="ztw1_form" method="post">
             <input type="hidden" name="ztw1_do_change" value="Y">
             <p>Insert html to be displayed as ad:<br>
-                <textarea name="ztw_new_ad" maxlength="65536">
-
-                </textarea>
+                <textarea name="ztw1_new_ad" maxlength="65536" required></textarea>
             </p>
             <p class="submit"><input type="submit" value="Submit"></p>
         </form>
@@ -90,11 +97,10 @@ function ztw1_admin_page(){
     <div class="wrap">
         <p>Current ads:</p>
         <?php
-        //load ads
         $ad_arr = get_option('ztw1_ads');
         //show existing ads
-        foreach ($ad_arr as $item){
-            echo $item;
+        foreach ($ad_arr as $row){
+            echo $row['content'];
         }
         ?>
     </div>
@@ -102,42 +108,23 @@ function ztw1_admin_page(){
 }
 
 
+function ztw1_add_ad_after_post_title($content, $id)
+{
+    $all_ads = get_option('ztw1_ads');
+    //get setting for how long post is a new post
+    if (!empty($all_ads)) {
+        $random_index = array_rand($all_ads);
+        $random_ad = $all_ads[$random_index]['content'];
+    } else {
+        // Brak wyników
+        //echo 'Brak dostępnych ogłoszeń.';
+    }
+//    $random_ad = $all_ads[rand(1, count($all_ads['content']))]['content'];
+    //generate proper post title
+    return $content . "<br><div class='ad'>" . $random_ad . "</div>";
+}
+
+add_filter("the_title", "ztw1_add_ad_after_post_title", 10, 2);
 
 
 
-
-
-
-
-
-
-
-
-
-//function ztw1_mark_new_post_title($content, $id)
-//{
-//    //read post publish date
-//    $date = get_the_date('Ymd', $id);
-//    //get current date
-//    $now = date('Ymd');
-//    //get setting for how long post is a new post
-//    $opDays = get_option('ztw1_new_ad');
-//    //generate proper post title
-//    if ($now - $date <= $opDays)
-//        return $content . "<sup class=\"ztw1_ad\">new</sup>";
-//    return $content;
-//}
-//
-//add_filter("the_title", "ztw1_mark_new_post_title", 10, 2);
-//
-//
-//
-//function ztw1_register_styles()
-//{
-//    //register style
-//    wp_register_style('ztw1_styles', plugins_url('/css/style.css', __FILE__));
-//    //enable style (load in meta of html)
-//    wp_enqueue_style('ztw1_styles');
-//}
-//
-//add_action('init', 'ztw1_register_styles');
