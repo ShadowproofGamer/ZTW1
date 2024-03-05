@@ -30,6 +30,7 @@ function ztw1_admin_actions_register_menu()
 
 add_action('admin_menu', 'ztw1_admin_actions_register_menu');
 
+//create a table if it does not exist
 function create_ads_table() {
     global $wpdb;
 
@@ -66,18 +67,33 @@ function add_advertisement($ad) {
     $wpdb->insert($table_name, array('content' => $ad), array('%s'));
 }
 
+function delete_advertisement($ad_id) {
+    global $wpdb;
+
+    $table_name = $wpdb->prefix . 'advertise_ads';
+
+    $wpdb->delete($table_name, array('id' => $ad_id));
+}
+
 
 function ztw1_admin_page(){
-    // get _POST variable from globals
     global $_POST;
-    // process changes from form
     if (isset($_POST['ztw1_do_change'])) {
         if ($_POST['ztw1_do_change'] == 'Y') {
             $new_ad = $_POST['ztw1_new_ad'];
-            echo '<div class="notice notice-success isdismissible">
-<p>Advertisement saved.</p></div>';
-            //update_option('ztw1_new_ad', $new_ad);
+            echo 
+                '<div class="notice notice-success isdismissible">
+                    <p>Advertisement saved.</p>
+                </div>';
             add_advertisement($new_ad);
+            update_option('ztw1_ads', get_advertisements());
+        }
+    }
+
+    if (isset($_POST['ztw1_do_delete'])) {
+        if ($_POST['ztw1_do_delete'] == 'Y') {
+            $ad_id = $_POST['ad_id'];
+            delete_advertisement($ad_id);
             update_option('ztw1_ads', get_advertisements());
         }
     }
@@ -98,9 +114,19 @@ function ztw1_admin_page(){
         <p>Current ads:</p>
         <?php
         $ad_arr = get_option('ztw1_ads');
-        //show existing ads
-        foreach ($ad_arr as $row){
-            echo $row['content'];
+        if (is_array($ad_arr)) {
+            foreach ($ad_arr as $row){
+                echo $row['content'];
+                ?>
+                <form method="post">
+                    <input type="hidden" name="ztw1_do_delete" value="Y">
+                    <input type="hidden" name="ad_id" value="<?php echo $row['id']; ?>">
+                    <button type="submit">Usuń reklamę</button>
+                </form>
+                <?php
+            }
+        } else {
+            echo "Brak reklam do wyświetlenia";
         }
         ?>
     </div>
@@ -111,17 +137,13 @@ function ztw1_admin_page(){
 function ztw1_add_ad_after_post_title($content, $id)
 {
     $all_ads = get_option('ztw1_ads');
-    //get setting for how long post is a new post
     if (!empty($all_ads)) {
         $random_index = array_rand($all_ads);
         $random_ad = $all_ads[$random_index]['content'];
-    } else {
-        // Brak wyników
-        //echo 'Brak dostępnych ogłoszeń.';
-    }
-//    $random_ad = $all_ads[rand(1, count($all_ads['content']))]['content'];
-    //generate proper post title
-    return $content . "<br><div class='ad'>" . $random_ad . "</div>";
+        return $content . "<br><div class='ad'>" . $random_ad . "</div>";
+    } 
+    return $content;
+    
 }
 
 add_filter("the_title", "ztw1_add_ad_after_post_title", 10, 2);
