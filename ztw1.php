@@ -120,7 +120,7 @@ function ztw1_admin_page(){
                 ?>
                 <form method="post">
                     <input type="hidden" name="ztw1_do_delete" value="Y">
-                    <input type="hidden" name="ad_id" value="<?php echo $row['id']; ?>">
+                    <input type="hidden" name="ad_id" value="<?php echo $row['id'] ?>">
                     <button type="submit">Usuń reklamę</button>
                 </form>
                 <?php
