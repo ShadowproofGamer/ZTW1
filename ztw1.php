@@ -59,6 +59,14 @@ function get_advertisements() {
     return $wpdb->get_results("SELECT * FROM $table_name", ARRAY_A);
 }
 
+function get_random_advertisement() {
+    global $wpdb;
+
+    $table_name = $wpdb->prefix . 'advertise_ads';
+
+    return $wpdb->get_results("SELECT * FROM $table_name ORDER BY RAND() LIMIT 1", ARRAY_A);
+}
+
 function add_advertisement($ad) {
     global $wpdb;
 
@@ -86,7 +94,7 @@ function ztw1_admin_page(){
                     <p>Advertisement saved.</p>
                 </div>';
             add_advertisement($new_ad);
-            update_option('ztw1_ads', get_advertisements());
+//            update_option('ztw1_ads', get_advertisements());
         }
     }
 
@@ -94,7 +102,7 @@ function ztw1_admin_page(){
         if ($_POST['ztw1_do_delete'] == 'Y') {
             $ad_id = $_POST['ad_id'];
             delete_advertisement($ad_id);
-            update_option('ztw1_ads', get_advertisements());
+//            update_option('ztw1_ads', get_advertisements());
         }
     }
 
@@ -105,7 +113,13 @@ function ztw1_admin_page(){
         <form name="ztw1_form" method="post">
             <input type="hidden" name="ztw1_do_change" value="Y">
             <p>Insert html to be displayed as ad:<br>
-                <textarea name="ztw1_new_ad" maxlength="65536" required></textarea>
+<!--                <textarea name="ztw1_new_ad" maxlength="65536" required></textarea>-->
+                <?php
+                // Use wp_editor to display the WordPress editor
+                wp_editor('', 'custom_editor_content', array(
+                    'textarea_name' => 'ztw1_new_ad',
+                ));
+                ?>
             </p>
             <p class="submit"><input type="submit" value="Submit"></p>
         </form>
@@ -113,7 +127,7 @@ function ztw1_admin_page(){
     <div class="wrap">
         <p>Current ads:</p>
         <?php
-        $ad_arr = get_option('ztw1_ads');
+        $ad_arr = get_advertisements(); //get_option('ztw1_ads');
         if (is_array($ad_arr)) {
             foreach ($ad_arr as $row){
                 echo $row['content'];
@@ -136,10 +150,9 @@ function ztw1_admin_page(){
 
 function ztw1_add_ad_after_post_title($content, $id)
 {
-    $all_ads = get_option('ztw1_ads');
-    if (!empty($all_ads)) {
-        $random_index = array_rand($all_ads);
-        $random_ad = $all_ads[$random_index]['content'];
+    $random_ad = get_random_advertisement()[0]['content'];
+    if (!empty($random_ad)) {
+
         return $content . "<br><div class='ad'>" . $random_ad . "</div>";
     } 
     return $content;
